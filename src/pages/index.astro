@@ -1,119 +1,238 @@
+
 ---
-import { getNotionData } from "../lib/notion";
+
+import { getNotionData } from "../lib/notion.ts";
+
 const blocks = await getNotionData();
 
+
+
 const flattenContent = (blocks: any[]): any[] => {
+
   let content: any[] = [];
-  
+
+ 
+
   for (const block of blocks) {
+
     const type = block.type;
-    
+
+   
+
     // ① 画像の場合
+
     if (type === 'image') {
+
       const url = block.image.type === 'external' ? block.image.external.url : block.image.file.url;
+
       content.push({ type: 'image', url: url });
+
     }
-    
+
+   
+
     // ② テキストの場合
+
     if (block[type] && (block[type].rich_text || block[type].text)) {
+
       const richText = block[type].rich_text || block[type].text;
-      
+
+     
+
       // 📂の判定用に、飾りを全て除いた純粋なテキストも作っておく
+
       const plainText = richText.map((t: any) => t.plain_text).join('');
-      
+
+     
+
       if (plainText.trim() !== '') {
+
         // 純粋なテキストと、リンク情報などが入ったままの「richText」の両方を渡す
+
         content.push({ type: 'text', plainText: plainText, richText: richText });
+
       }
+
     }
-    
+
+   
+
     // ③ 子供がいればさらに潜る
+
     if (block.children) {
+
       content = content.concat(flattenContent(block.children));
+
     }
+
   }
+
   return content;
+
 };
 
+
+
 const allItems = flattenContent(blocks);
+
 ---
 
+
+
 <html lang="ja">
+
   <head>
+
     <meta charset="utf-8" />
+
     <title>福田睦晃 (Mutsuki Fukuda) - Personal Activity Archive</title>
+
     <style>
+
       body {
+
         font-family: 'Helvetica Neue', Arial, sans-serif;
+
         background-color: #f8fafc;
+
         color: #334155;
+
         max-width: 800px;
+
         margin: 0 auto;
+
         padding: 40px 20px;
+
       }
+
       h1 { text-align: center; color: #0f172a; margin-bottom: 2rem; font-size: 1.8rem; }
+
       ul { list-style: none; padding: 0; }
-      
+
+     
+
       .section-title {
+
         color: #1e293b; font-size: 1.25rem; font-weight: bold;
+
         margin-top: 4rem; margin-bottom: 1.5rem;
+
         border-left: 5px solid #3b82f6; padding-left: 1rem;
+
       }
-      
+
+     
+
       .card {
+
         background: #ffffff; margin-bottom: 1rem; padding: 1.5rem 2rem;
+
         border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+
         line-height: 1.8; white-space: pre-wrap; word-wrap: break-word;
+
       }
+
+
 
       .notion-image {
+
         width: 100%; max-height: 500px; object-fit: contain;
+
         border-radius: 12px; margin: 1.5rem 0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+
       }
+
+
 
       /* 🔗 リンク専用のデザイン（青文字にして、マウスを乗せると下線が出る） */
+
       a {
+
         color: #3b82f6;
+
         text-decoration: none;
+
         font-weight: 500;
+
       }
+
       a:hover {
+
         text-decoration: underline;
+
       }
+
     </style>
+
   </head>
+
   <body>
+
     <h1>福田睦晃 (Mutsuki Fukuda)<br/>- Personal Activity Archive</h1>
 
+
+
     <ul>
+
       {allItems.map((item) => {
+
         // 画像の描画
+
         if (item.type === 'image') {
+
           return <img src={item.url} alt="Activity Image" class="notion-image" />;
+
         }
-        
+
+       
+
         // テキストの描画
+
         if (item.type === 'text') {
+
           // 「📂」から始まる場合は見出しデザイン
+
           if (item.plainText.startsWith('📂')) {
+
             return <div class="section-title">{item.plainText}</div>;
+
           }
-          
+
+         
+
           // 通常のカードの場合、一文字ずつリンクが隠れていないかチェックする
+
           return (
+
             <li class="card">
+
               {item.richText.map((textObj: any) => {
+
                 // もし「href（リンクURL）」を持っていたら、クリックできる<a>タグにする
+
                 if (textObj.href) {
+
                   return <a href={textObj.href} target="_blank" rel="noopener noreferrer">{textObj.plain_text}</a>;
+
                 }
+
                 // リンクを持っていなければ、ただの文字として表示
+
                 return <span>{textObj.plain_text}</span>;
+
               })}
+
             </li>
+
           );
+
         }
+
       })}
+
     </ul>
+
   </body>
+
 </html>
