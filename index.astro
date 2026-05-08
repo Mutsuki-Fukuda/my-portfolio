@@ -1,0 +1,119 @@
+---
+import { getNotionData } from "../lib/notion";
+// Imageコンポーネントをインポート
+import { Image } from 'astro:assets';
+
+const blocks = await getNotionData();
+
+const flattenContent = (blocks: any[]): any[] => {
+  let content: any[] = [];
+  for (const block of blocks) {
+    const type = block.type;
+    if (type === 'image') {
+      const url = block.image.type === 'external' ? block.image.external.url : block.image.file.url;
+      content.push({ type: 'image', url: url });
+    }
+    if (block[type] && (block[type].rich_text || block[type].text)) {
+      const richText = block[type].rich_text || block[type].text;
+      const plainText = richText.map((t: any) => t.plain_text).join('');
+      if (plainText.trim() !== '') {
+        content.push({ type: 'text', plainText: plainText, richText: richText });
+      }
+    }
+    if (block.children) {
+      content = content.concat(flattenContent(block.children));
+    }
+  }
+  return content;
+};
+
+const allItems = flattenContent(blocks);
+---
+
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>福田睦晃 (Mutsuki Fukuda) - Personal Activity Archive</title>
+    <style>
+      body {
+        font-family: 'Helvetica Neue', Arial, sans-serif;
+        background-color: #f8fafc;
+        color: #334155;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 40px 20px;
+      }
+      h1 { text-align: center; color: #0f172a; margin-bottom: 2rem; font-size: 1.8rem; }
+      ul { list-style: none; padding: 0; }
+      
+      .section-title {
+        color: #1e293b; font-size: 1.25rem; font-weight: bold;
+        margin-top: 4rem; margin-bottom: 1.5rem;
+        border-left: 5px solid #3b82f6; padding-left: 1rem;
+      }
+      
+      .card {
+        background: #ffffff; margin-bottom: 1rem; padding: 1.5rem 2rem;
+        border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        line-height: 1.8; white-space: pre-wrap; word-wrap: break-word;
+      }
+
+      /* 🌟 スタイルをさらにシンプルに。これで画像が切れなくなります */
+      .notion-image {
+        display: block;
+        width: 100%;
+        height: auto;      /* 高さを自動にして比率を守る */
+        border-radius: 12px;
+        margin: 1.5rem 0;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      }
+
+      a {
+        color: #3b82f6;
+        text-decoration: none;
+        font-weight: 500;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>福田睦晃 (Mutsuki Fukuda)<br/>- Personal Activity Archive</h1>
+
+    <ul>
+      {allItems.map((item) => {
+        if (item.type === 'image') {
+          // 🌟 layoutを削除し、必要最小限の設定にしました
+          return (
+            <Image 
+              src={item.url} 
+              alt="Activity Image" 
+              width={1200} 
+              height={800} 
+              class="notion-image"
+            />
+          );
+        }
+        
+        if (item.type === 'text') {
+          if (item.plainText.startsWith('📂')) {
+            return <div class="section-title">{item.plainText}</div>;
+          }
+          
+          return (
+            <li class="card">
+              {item.richText.map((textObj: any) => {
+                if (textObj.href) {
+                  return <a href={textObj.href} target="_blank" rel="noopener noreferrer">{textObj.plain_text}</a>;
+                }
+                return <span>{textObj.plain_text}</span>;
+              })}
+            </li>
+          );
+        }
+      })}
+    </ul>
+  </body>
+</html>
