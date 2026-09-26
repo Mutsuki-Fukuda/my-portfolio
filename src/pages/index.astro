@@ -1,5 +1,8 @@
 ---
 import { getNotionData } from "../lib/notion.ts";
+import fs from "node:fs";
+import path from "node:path";
+
 const blocks = await getNotionData();
 
 const getPlainText = (b: any) => {
@@ -7,6 +10,20 @@ const getPlainText = (b: any) => {
   const type = b.type;
   if (!b[type] || !b[type].rich_text) return '';
   return b[type].rich_text.map((t: any) => t.plain_text).join('');
+};
+
+const resolveImageUrl = (url: string) => {
+  if (url && url.startsWith('/notion-images/')) {
+    try {
+      const filePath = path.join(process.cwd(), 'public', url);
+      const base64 = fs.readFileSync(filePath, 'base64');
+      const ext = url.split('.').pop() || 'jpeg';
+      return `data:image/${ext};base64,${base64}`;
+    } catch (e) {
+      return url;
+    }
+  }
+  return url;
 };
 
 const getSnsDetails = (url: string) => {
@@ -53,7 +70,7 @@ blocks.forEach((block: any) => {
     snsUrl.includes('youtrust.jp') || snsUrl.includes('bsky.app') || snsUrl.includes('mixi.social')
   );
 
-  const plainText = getPlainText(block).trim();
+  const plainText = getPlainText(block);
   const isOnlyUrl = plainText.length > 0 && plainText.length <= snsUrl.length + 5;
 
   if (isSns && isOnlyUrl) {
@@ -153,7 +170,6 @@ if (currentSnsGroup.length > 0) {
       a { color: #60a5fa; text-decoration: none; border-bottom: 1px solid rgba(96, 165, 250, 0.4); }
       a:hover { border-bottom-color: #60a5fa; }
 
-      /* 🌟 修正：SNSセクションとトグルカードの余白を絶妙なバランスに再調整（2rem） */
       .sns-section { margin-top: 2rem; margin-bottom: 2rem; }
       .sns-row { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-bottom: 12px; }
       
@@ -307,7 +323,7 @@ if (currentSnsGroup.length > 0) {
                             {child.children.map((grandchild: any) => {
                               if (grandchild.type === 'image') {
                                 const gcUrl = grandchild.image.type === 'external' ? grandchild.image.external.url : grandchild.image.file.url;
-                                return <img src={gcUrl} alt="Nested Content Image" class="notion-image" />;
+                                return <img src={resolveImageUrl(gcUrl)} alt="Nested Content Image" class="notion-image" />;
                               }
                               if (grandchild.type === 'paragraph' || grandchild.type.startsWith('heading_')) {
                                 const gcTextData = grandchild[grandchild.type].rich_text;
@@ -330,7 +346,7 @@ if (currentSnsGroup.length > 0) {
 
                     if (child.type === 'image') {
                       const childUrl = child.image.type === 'external' ? child.image.external.url : child.image.file.url;
-                      return <img src={childUrl} alt="Toggle Content Image" class="notion-image" />;
+                      return <img src={resolveImageUrl(childUrl)} alt="Toggle Content Image" class="notion-image" />;
                     }
                     if (child.type === 'paragraph' || child.type.startsWith('heading_')) {
                       const childTextData = child[child.type].rich_text;
@@ -368,7 +384,7 @@ if (currentSnsGroup.length > 0) {
 
           if (type === 'image') {
             const url = typeData.type === 'external' ? typeData.external.url : typeData.file.url;
-            return <img src={url} alt="Activity Image" class="notion-image" />;
+            return <img src={resolveImageUrl(url)} alt="Activity Image" class="notion-image" />;
           }
 
           return null;
