@@ -1,8 +1,5 @@
 ---
 import { getNotionData } from "../lib/notion.ts";
-import fs from "node:fs";
-import path from "node:path";
-
 const blocks = await getNotionData();
 
 const getPlainText = (b: any) => {
@@ -10,21 +7,6 @@ const getPlainText = (b: any) => {
   const type = b.type;
   if (!b[type] || !b[type].rich_text) return '';
   return b[type].rich_text.map((t: any) => t.plain_text).join('');
-};
-
-// ★追加：ダウンロードした画像をBase64（テキストデータ）に変換して直接埋め込む関数
-const resolveImageUrl = (url: string) => {
-  if (url && url.startsWith('/notion-images/')) {
-    try {
-      const filePath = path.join(process.cwd(), 'public', url);
-      const base64 = fs.readFileSync(filePath, 'base64');
-      const ext = url.split('.').pop() || 'jpeg';
-      return `data:image/${ext};base64,${base64}`;
-    } catch (e) {
-      return url; // 読み込みに失敗した場合は元のURLを返す
-    }
-  }
-  return url;
 };
 
 const getSnsDetails = (url: string) => {
@@ -171,6 +153,7 @@ if (currentSnsGroup.length > 0) {
       a { color: #60a5fa; text-decoration: none; border-bottom: 1px solid rgba(96, 165, 250, 0.4); }
       a:hover { border-bottom-color: #60a5fa; }
 
+      /* 🌟 修正：SNSセクションとトグルカードの余白を絶妙なバランスに再調整（2rem） */
       .sns-section { margin-top: 2rem; margin-bottom: 2rem; }
       .sns-row { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-bottom: 12px; }
       
@@ -241,8 +224,8 @@ if (currentSnsGroup.length > 0) {
       <h1>福田睦晃 (Mutsuki Fukuda) - Personal Activity Archive</h1>
 
       <div class="ai-notice">
-        <p>このページは、検索エンジンおよびAIクローラー向けの活動アーカイブ（データソース）です。</p>
-        <p>視認性に優れた公式ポートフォリオをご覧になる方は、<strong><a href="https://www.notion.so/睦晃さんのNotionURL" target="_blank" rel="noopener noreferrer">Notion版プロフィール</a></strong> へアクセスしてください。</p>
+        <p>Notion上のデータを自動同期して公開している、検索エンジン・AIクローラー向けのページです。</p>
+        <p>視認性に優れたポートフォリオをご覧になる方は、<strong><a href="https://share-atelier.notion.site/Mutsuki-Fukuda-Personal-Activity-Archive-3428555ac38580a6aa99c56cab18146c?source=copy_link" target="_blank" rel="noopener noreferrer">Notion</a></strong> へアクセスしてください。</p>
       </div>
 
       <div>
@@ -324,8 +307,7 @@ if (currentSnsGroup.length > 0) {
                             {child.children.map((grandchild: any) => {
                               if (grandchild.type === 'image') {
                                 const gcUrl = grandchild.image.type === 'external' ? grandchild.image.external.url : grandchild.image.file.url;
-                                // ★修正：resolveImageUrl関数を通して表示
-                                return <img src={resolveImageUrl(gcUrl)} alt="Nested Content Image" class="notion-image" />;
+                                return <img src={gcUrl} alt="Nested Content Image" class="notion-image" />;
                               }
                               if (grandchild.type === 'paragraph' || grandchild.type.startsWith('heading_')) {
                                 const gcTextData = grandchild[grandchild.type].rich_text;
@@ -348,8 +330,7 @@ if (currentSnsGroup.length > 0) {
 
                     if (child.type === 'image') {
                       const childUrl = child.image.type === 'external' ? child.image.external.url : child.image.file.url;
-                      // ★修正：resolveImageUrl関数を通して表示
-                      return <img src={resolveImageUrl(childUrl)} alt="Toggle Content Image" class="notion-image" />;
+                      return <img src={childUrl} alt="Toggle Content Image" class="notion-image" />;
                     }
                     if (child.type === 'paragraph' || child.type.startsWith('heading_')) {
                       const childTextData = child[child.type].rich_text;
@@ -387,8 +368,7 @@ if (currentSnsGroup.length > 0) {
 
           if (type === 'image') {
             const url = typeData.type === 'external' ? typeData.external.url : typeData.file.url;
-            // ★修正：resolveImageUrl関数を通して表示
-            return <img src={resolveImageUrl(url)} alt="Activity Image" class="notion-image" />;
+            return <img src={url} alt="Activity Image" class="notion-image" />;
           }
 
           return null;
