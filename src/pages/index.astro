@@ -5,6 +5,7 @@ import path from "node:path";
 
 const blocks = await getNotionData();
 
+// テキスト抽出（paragraphだけでなく、toggle, bulleted_list_item, callout等の全テキストに対応）
 const getPlainText = (b: any) => {
   if (!b) return '';
   const type = b.type;
@@ -24,6 +25,18 @@ const resolveImageUrl = (url: string) => {
     }
   }
   return url;
+};
+
+// 描画対象とするテキスト系ブロックの型判定
+const isTextBlock = (type: string) => {
+  return [
+    'paragraph',
+    'bulleted_list_item',
+    'numbered_list_item',
+    'toggle',
+    'quote',
+    'callout'
+  ].includes(type) || type.startsWith('heading_');
 };
 
 const getSnsDetails = (url: string) => {
@@ -70,7 +83,7 @@ blocks.forEach((block: any) => {
     snsUrl.includes('youtrust.jp') || snsUrl.includes('bsky.app') || snsUrl.includes('mixi.social')
   );
 
-  const plainText = getPlainText(block);
+  const plainText = getPlainText(block).trim();
   const isOnlyUrl = plainText.length > 0 && plainText.length <= snsUrl.length + 5;
 
   if (isSns && isOnlyUrl) {
@@ -105,79 +118,105 @@ if (currentIntroGroup.length > 0) {
 if (currentSnsGroup.length > 0) {
   processedBlocks.push({ type: 'sns_group', links: currentSnsGroup });
 }
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "name": "福田睦晃",
+  "alternateName": "Mutsuki Fukuda",
+  "url": "https://xn--tqq525c69a161a.jp/",
+  "alumniOf": {
+    "@type": "CollegeOrUniversity",
+    "name": "岩手県立大学"
+  }
+};
 ---
 
 <html lang="ja">
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>福田睦晃 (Mutsuki Fukuda) - Personal Activity Archive</title>
+    <meta name="description" content="福田睦晃 (Mutsuki Fukuda) の活動記録・SNS過去ポスト・登壇資料を構造化したアーカイブページ。" />
+    <meta property="og:title" content="福田睦晃 (Mutsuki Fukuda) - Personal Activity Archive" />
+    <meta property="og:description" content="福田睦晃 (Mutsuki Fukuda) の活動記録・SNS過去ポスト・登壇資料を構造化したアーカイブページ。" />
+    <meta property="og:type" content="profile" />
+    <meta property="og:url" content="https://xn--tqq525c69a161a.jp/" />
+    <meta name="twitter:card" content="summary" />
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
     <style is:global>
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
       body {
-        font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Segoe UI", Arial, sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Arial, Meiryo, sans-serif;
         background-color: #515151;
         color: #e5e7eb;
         margin: 0; padding: 0;
-        line-height: 1.6;
+        line-height: 1.65;
+        -webkit-font-smoothing: antialiased;
       }
       
-      .top-spacer { width: 100%; height: 60px; }
+      .top-spacer { width: 100%; height: 56px; }
       
       .container {
         max-width: 800px; margin: 0 auto; padding: 0 24px 80px;
       }
 
       h1 { 
-        color: #ffffff; margin-bottom: 2.5rem; text-align: center;
-        font-size: 1.8rem; font-weight: 700; letter-spacing: 0.05em;
+        color: #ffffff; margin-bottom: 2.2rem; text-align: center;
+        font-size: 1.75rem; font-weight: 700; letter-spacing: 0.04em;
         text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        line-height: 1.35;
       }
       
       .ai-notice {
-        background: rgba(0, 0, 0, 0.2); border-radius: 8px; padding: 16px 24px;
-        margin-bottom: 40px; font-size: 0.9rem; line-height: 1.6; color: #cbd5e1; 
-        border: 1px solid rgba(255,255,255,0.1);
+        background: rgba(0, 0, 0, 0.22); border-radius: 10px; padding: 16px 22px;
+        margin-bottom: 36px; font-size: 0.88rem; line-height: 1.65; color: #cbd5e1; 
+        border: 1px solid rgba(255,255,255,0.09);
       }
       .ai-notice p { margin: 0 0 6px 0; }
       .ai-notice p:last-child { margin: 0; }
-      .ai-notice a { font-weight: 500; color: #60a5fa; text-decoration: none; border-bottom: 1px solid rgba(96, 165, 250, 0.4); }
+      .ai-notice a { font-weight: 600; color: #60a5fa; text-decoration: none; border-bottom: 1px solid rgba(96, 165, 250, 0.4); }
       .ai-notice a:hover { border-bottom-color: #60a5fa; }
       
       .intro-container {
-        margin-bottom: 2rem;
+        margin-bottom: 2.2rem;
       }
       
       .intro-paragraph {
-        font-size: 1.05rem; 
-        line-height: 1.9; 
+        font-size: 1.02rem; 
+        line-height: 1.85; 
         color: #f8fafc; 
         white-space: pre-wrap; 
         word-wrap: break-word; 
         letter-spacing: 0.02em;
-        margin: 0 0 1.8rem 0;
+        margin: 0 0 1.5rem 0;
       }
       .intro-paragraph:last-child {
         margin: 0;
       }
 
       .section-title {
-        color: #ffffff; font-size: 1.25rem; font-weight: 600; margin-top: 3.5rem; margin-bottom: 1rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 0.5rem;
+        color: #ffffff; font-size: 1.2rem; font-weight: 600; margin-top: 3.2rem; margin-bottom: 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12); padding-bottom: 0.5rem;
       }
       .notion-image {
-        width: 100%; max-height: 500px; object-fit: contain; border-radius: 8px; margin: 0.5rem 0;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.2); background: rgba(0,0,0,0.2);
+        width: 100%; max-height: 520px; object-fit: contain; border-radius: 8px; margin: 0.6rem 0;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.22); background: rgba(0,0,0,0.2);
+        display: block;
       }
       a { color: #60a5fa; text-decoration: none; border-bottom: 1px solid rgba(96, 165, 250, 0.4); }
       a:hover { border-bottom-color: #60a5fa; }
 
-      .sns-section { margin-top: 2rem; margin-bottom: 2rem; }
-      .sns-row { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-bottom: 12px; }
+      .sns-section { margin-top: 2rem; margin-bottom: 2.2rem; }
+      .sns-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 10px; }
       
       .sns-btn {
-        display: inline-flex; align-items: center; padding: 10px 20px; border-radius: 8px; 
+        display: inline-flex; align-items: center; padding: 9px 18px; border-radius: 8px; 
         color: #ffffff !important; 
         background: linear-gradient(145deg, #575757, #484848); 
-        font-weight: 500; font-size: 0.95rem; text-decoration: none;
+        font-weight: 500; font-size: 0.92rem; text-decoration: none;
         border: 1px solid rgba(255, 255, 255, 0.08);
         box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.15), -2px -2px 8px rgba(255, 255, 255, 0.05);
         transition: all 0.2s ease;
@@ -190,47 +229,89 @@ if (currentSnsGroup.length > 0) {
       }
       .sns-icon { margin-right: 8px; display: flex; align-items: center; justify-content: center; opacity: 0.95; border: none; }
 
+      /* 1階層目トグルカード */
       details.toggle-card {
         background: linear-gradient(145deg, #4b4b4b, #3d3d3d);
-        margin-bottom: 1.5rem; padding: 1.5rem 2rem; border-radius: 12px; 
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.12), -2px -2px 10px rgba(255, 255, 255, 0.03);
+        margin-bottom: 1.25rem; padding: 1.35rem 1.75rem; border-radius: 12px; 
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.14), -2px -2px 10px rgba(255, 255, 255, 0.03);
       }
       summary.toggle-summary {
-        font-size: 1.1rem; font-weight: 600; cursor: pointer; color: #ffffff; 
-        outline: none; list-style: none; display: flex; align-items: center;
+        font-size: 1.05rem; font-weight: 600; cursor: pointer; color: #ffffff; 
+        outline: none; list-style: none; display: flex; align-items: flex-start;
+        line-height: 1.5;
       }
       summary.toggle-summary::-webkit-details-marker { display: none; }
       
       .toggle-icon {
-        color: #9ca3af; font-size: 0.75rem; margin-right: 12px; margin-top: 2px;
+        color: #9ca3af; font-size: 0.72rem; margin-right: 12px; margin-top: 5px;
         transition: transform 0.2s ease; display: inline-block; flex-shrink: 0;
       }
-      details[open] > summary.toggle-summary .toggle-icon { transform: rotate(90deg); }
+      details[open] > summary.toggle-summary .toggle-icon { transform: rotate(90deg); color: #cbd5e1; }
       
       .toggle-content { 
-        margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.06); 
+        margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid rgba(255, 255, 255, 0.07); 
       }
-      .toggle-text { margin-bottom: 1rem; line-height: 1.8; color: #e5e7eb; }
+      .toggle-text { 
+        margin-bottom: 0.85rem; line-height: 1.8; color: #e5e7eb; 
+        white-space: pre-wrap; word-wrap: break-word; font-size: 0.96rem;
+      }
+      .toggle-text:last-child { margin-bottom: 0; }
 
+      /* 箇条書き（・）のスタイル */
+      .bullet-item {
+        position: relative;
+        padding-left: 1.35rem;
+        margin-bottom: 0.55rem;
+      }
+      .bullet-item::before {
+        content: "・";
+        position: absolute;
+        left: 0.1rem;
+        color: #cbd5e1;
+        font-weight: bold;
+      }
+
+      /* 2階層目トグル */
       details.nested-toggle {
-        background: rgba(0, 0, 0, 0.15); 
-        margin-bottom: 1rem; padding: 1.2rem 1.5rem; border-radius: 8px; 
-        border: 1px solid rgba(255, 255, 255, 0.03);
+        background: rgba(0, 0, 0, 0.16); 
+        margin-bottom: 0.85rem; padding: 1rem 1.25rem; border-radius: 8px; 
+        border: 1px solid rgba(255, 255, 255, 0.04);
         box-shadow: inset 2px 2px 5px rgba(0,0,0,0.1);
       }
       summary.nested-summary {
-        font-size: 1rem; font-weight: 600; cursor: pointer; color: #ffffff; 
-        outline: none; list-style: none; display: flex; align-items: center;
+        font-size: 0.96rem; font-weight: 600; cursor: pointer; color: #f8fafc; 
+        outline: none; list-style: none; display: flex; align-items: flex-start;
+        line-height: 1.5;
       }
       summary.nested-summary::-webkit-details-marker { display: none; }
       
       .nested-icon {
-        color: #9ca3af; font-size: 0.65rem; margin-right: 10px; margin-top: 2px;
+        color: #9ca3af; font-size: 0.65rem; margin-right: 10px; margin-top: 5px;
         transition: transform 0.2s ease; display: inline-block; flex-shrink: 0;
       }
-      details[open] > summary.nested-summary .nested-icon { transform: rotate(90deg); }
-      .nested-content { margin-top: 1rem; }
+      details[open] > summary.nested-summary .nested-icon { transform: rotate(90deg); color: #cbd5e1; }
+      .nested-content { margin-top: 0.9rem; padding-top: 0.75rem; border-top: 1px solid rgba(255, 255, 255, 0.05); }
+
+      /* 3階層目トグル（【テキストデータ抽出】など：スマホで横幅が潰れないようスリム化＋左アクセント線） */
+      details.deep-toggle {
+        background: rgba(0, 0, 0, 0.22);
+        margin: 0.75rem 0; padding: 0.85rem 1rem; border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        border-left: 3px solid rgba(96, 165, 250, 0.55);
+      }
+      .deep-content {
+        margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      @media (max-width: 600px) {
+        .top-spacer { height: 36px; }
+        .container { padding: 0 16px 60px; }
+        h1 { font-size: 1.45rem; margin-bottom: 1.8rem; }
+        details.toggle-card { padding: 1.1rem 1.2rem; }
+        details.nested-toggle { padding: 0.85rem 1rem; }
+        details.deep-toggle { padding: 0.75rem 0.85rem; }
+      }
     </style>
   </head>
   <body>
@@ -251,14 +332,11 @@ if (currentSnsGroup.length > 0) {
               <div class="intro-container">
                 {block.blocks.map((introBlock: any) => {
                   const tData = introBlock[introBlock.type];
-                  return (
-                    <p class="intro-paragraph">
-                      {tData.rich_text.map((t: any) => t.href 
-                        ? <a href={t.href} target="_blank" rel="noopener noreferrer">{t.plain_text}</a> 
-                        : <span>{t.plain_text}</span>
-                      )}
-                    </p>
-                  );
+                  // タグと中身を1行で密着させ、white-space: pre-wrapによる先頭インデント空白の混入を完全に防ぐ
+                  return <p class="intro-paragraph">{tData.rich_text.map((t: any, idx: number) => {
+                    const txt = idx === 0 ? t.plain_text.trimStart() : t.plain_text;
+                    return t.href ? <a href={t.href} target="_blank" rel="noopener noreferrer">{txt}</a> : <span>{txt}</span>;
+                  })}</p>;
                 })}
               </div>
             );
@@ -303,6 +381,7 @@ if (currentSnsGroup.length > 0) {
           const typeData = block[type];
           const text = getPlainText(block);
 
+          // 1階層目のトグル（📂 Instagram Archive など）
           if (block.children && block.children.length > 0) {
             return (
               <details class="toggle-card">
@@ -312,6 +391,7 @@ if (currentSnsGroup.length > 0) {
                 </summary>
                 <div class="toggle-content">
                   {block.children.map((child: any) => {
+                    // 2階層目のトグル（💡 #1 (Slide 1〜7) など）
                     if (child.children && child.children.length > 0) {
                       return (
                         <details class="nested-toggle">
@@ -321,21 +401,44 @@ if (currentSnsGroup.length > 0) {
                           </summary>
                           <div class="nested-content">
                             {child.children.map((grandchild: any) => {
+                              // ★ 3階層目のトグル（【テキストデータ抽出】など）と、その中の4階層目テキスト群
+                              if (grandchild.children && grandchild.children.length > 0) {
+                                return (
+                                  <details class="deep-toggle">
+                                    <summary class="nested-summary">
+                                      <span class="nested-icon">▶︎</span>
+                                      <span>{getPlainText(grandchild) || 'テキストデータを見る'}</span>
+                                    </summary>
+                                    <div class="deep-content">
+                                      {grandchild.children.map((ggc: any) => {
+                                        if (ggc.type === 'image') {
+                                          const ggcUrl = ggc.image.type === 'external' ? ggc.image.external.url : ggc.image.file.url;
+                                          return <img src={resolveImageUrl(ggcUrl)} alt="Slide Content Image" class="notion-image" loading="lazy" decoding="async" />;
+                                        }
+                                        if (isTextBlock(ggc.type)) {
+                                          const ggcTextData = ggc[ggc.type]?.rich_text;
+                                          if (!ggcTextData || ggcTextData.length === 0) return null;
+                                          const isBullet = ggc.type === 'bulleted_list_item';
+                                          return <div class={`toggle-text ${isBullet ? 'bullet-item' : ''}`}>{ggcTextData.map((t: any) => t.href ? <a href={t.href} target="_blank" rel="noopener noreferrer">{t.plain_text}</a> : <span>{t.plain_text}</span>)}</div>;
+                                        }
+                                        return null;
+                                      })}
+                                    </div>
+                                  </details>
+                                );
+                              }
+
+                              // 3階層目が画像の場合（スライド画像）
                               if (grandchild.type === 'image') {
                                 const gcUrl = grandchild.image.type === 'external' ? grandchild.image.external.url : grandchild.image.file.url;
-                                return <img src={resolveImageUrl(gcUrl)} alt="Nested Content Image" class="notion-image" />;
+                                return <img src={resolveImageUrl(gcUrl)} alt="Nested Content Image" class="notion-image" loading="lazy" decoding="async" />;
                               }
-                              if (grandchild.type === 'paragraph' || grandchild.type.startsWith('heading_')) {
-                                const gcTextData = grandchild[grandchild.type].rich_text;
-                                if (!gcTextData) return null;
-                                return (
-                                  <div class="toggle-text">
-                                    {gcTextData.map((t: any) => t.href 
-                                      ? <a href={t.href} target="_blank" rel="noopener noreferrer">{t.plain_text}</a> 
-                                      : <span>{t.plain_text}</span>
-                                    )}
-                                  </div>
-                                );
+                              // 3階層目が通常のテキストや箇条書きの場合
+                              if (isTextBlock(grandchild.type)) {
+                                const gcTextData = grandchild[grandchild.type]?.rich_text;
+                                if (!gcTextData || gcTextData.length === 0) return null;
+                                const isBullet = grandchild.type === 'bulleted_list_item';
+                                return <div class={`toggle-text ${isBullet ? 'bullet-item' : ''}`}>{gcTextData.map((t: any) => t.href ? <a href={t.href} target="_blank" rel="noopener noreferrer">{t.plain_text}</a> : <span>{t.plain_text}</span>)}</div>;
                               }
                               return null;
                             })}
@@ -344,21 +447,17 @@ if (currentSnsGroup.length > 0) {
                       );
                     }
 
+                    // 2階層目が画像の場合
                     if (child.type === 'image') {
                       const childUrl = child.image.type === 'external' ? child.image.external.url : child.image.file.url;
-                      return <img src={resolveImageUrl(childUrl)} alt="Toggle Content Image" class="notion-image" />;
+                      return <img src={resolveImageUrl(childUrl)} alt="Toggle Content Image" class="notion-image" loading="lazy" decoding="async" />;
                     }
-                    if (child.type === 'paragraph' || child.type.startsWith('heading_')) {
-                      const childTextData = child[child.type].rich_text;
-                      if (!childTextData) return null;
-                      return (
-                        <div class="toggle-text">
-                          {childTextData.map((t: any) => t.href 
-                            ? <a href={t.href} target="_blank" rel="noopener noreferrer">{t.plain_text}</a> 
-                            : <span>{t.plain_text}</span>
-                          )}
-                        </div>
-                      );
+                    // 2階層目が通常のテキストや箇条書きの場合（💬 キャプションや「・」の箇条書きなど）
+                    if (isTextBlock(child.type)) {
+                      const childTextData = child[child.type]?.rich_text;
+                      if (!childTextData || childTextData.length === 0) return null;
+                      const isBullet = child.type === 'bulleted_list_item';
+                      return <div class={`toggle-text ${isBullet ? 'bullet-item' : ''}`}>{childTextData.map((t: any) => t.href ? <a href={t.href} target="_blank" rel="noopener noreferrer">{t.plain_text}</a> : <span>{t.plain_text}</span>)}</div>;
                     }
                     return null;
                   })}
@@ -367,24 +466,20 @@ if (currentSnsGroup.length > 0) {
             );
           }
 
-          if (type === 'paragraph' || type.startsWith('heading_')) {
+          if (isTextBlock(type)) {
             if (!text.trim()) return null; 
-            
             if (text.startsWith('📂')) return <div class="section-title">{text}</div>;
             
-            return (
-              <p class="intro-paragraph">
-                {typeData.rich_text.map((t: any) => t.href 
-                  ? <a href={t.href} target="_blank" rel="noopener noreferrer">{t.plain_text}</a> 
-                  : <span>{t.plain_text}</span>
-                )}
-              </p>
-            );
+            const isBullet = type === 'bulleted_list_item';
+            return <p class={`intro-paragraph ${isBullet ? 'bullet-item' : ''}`}>{typeData.rich_text.map((t: any, idx: number) => {
+              const txt = idx === 0 ? t.plain_text.trimStart() : t.plain_text;
+              return t.href ? <a href={t.href} target="_blank" rel="noopener noreferrer">{txt}</a> : <span>{txt}</span>;
+            })}</p>;
           }
 
           if (type === 'image') {
             const url = typeData.type === 'external' ? typeData.external.url : typeData.file.url;
-            return <img src={resolveImageUrl(url)} alt="Activity Image" class="notion-image" />;
+            return <img src={resolveImageUrl(url)} alt="Activity Image" class="notion-image" loading="lazy" decoding="async" />;
           }
 
           return null;
