@@ -12,7 +12,6 @@ const getPlainText = (b: any) => {
   return b[type].rich_text.map((t: any) => t.plain_text).join('');
 };
 
-// ★ 画像の高速化：ビルド時にsharpでWebP圧縮＋リサイズしてからBase64化し、データ量を1/20以下に削減
 const imageCache = new Map<string, string>();
 
 const preloadAndCompressImages = async (items: any[]) => {
@@ -74,7 +73,6 @@ const escapeHtml = (str: string) => {
     .replace(/'/g, "&#039;");
 };
 
-// ★ 改行コード(\n)を確実に<br />へ変換し、リスト内のShift+Enter改行が1行に繋がるバグを解消
 const renderRichTextHtml = (richText: any[], trimStart = false) => {
   if (!richText || richText.length === 0) return '';
   return richText.map((t: any, idx: number) => {
@@ -82,7 +80,9 @@ const renderRichTextHtml = (richText: any[], trimStart = false) => {
     if (trimStart && idx === 0) {
       text = text.replace(/^[\s\u3000\u00A0\u200B-\u200D\uFEFF]+/, '');
     }
-    let content = escapeHtml(text).replace(/\n/g, '<br />');
+    let content = escapeHtml(text)
+      .replace(/\n(\s*※[\s\S]*)/g, '<span class="list-note">$1</span>')
+      .replace(/\n/g, '<br />');
     if (t.annotations?.bold) content = `<strong>${content}</strong>`;
     if (t.annotations?.italic) content = `<em>${content}</em>`;
     if (t.annotations?.strikethrough) content = `<s>${content}</s>`;
@@ -94,7 +94,6 @@ const renderRichTextHtml = (richText: any[], trimStart = false) => {
   }).join('');
 };
 
-// 無制限の再帰レンダリング関数
 const renderNestedBlocksHtml = (items: any[], depth = 1, listLevel = 0): string => {
   if (!items || items.length === 0) return '';
 
@@ -341,7 +340,6 @@ const jsonLd = {
       a { color: #93c5fd; text-decoration: none; border-bottom: 1px solid rgba(147, 197, 253, 0.35); }
       a:hover { color: #bfdbfe; border-bottom-color: #bfdbfe; }
 
-      /* SNSボタン群（立体ピルボタンとして維持） */
       .sns-section { margin-top: 2.2rem; margin-bottom: 2.8rem; }
       .sns-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 10px; }
       
@@ -361,7 +359,6 @@ const jsonLd = {
       }
       .sns-icon { margin-right: 8px; display: flex; align-items: center; justify-content: center; opacity: 0.95; border: none; flex-shrink: 0; }
 
-      /* ★ 記事タイトル（1階層目トグル）：SNSボタンとのっぺり被らないよう、左アクセントライン＋右端シェブロンの洗練されたインデックス造形へ刷新 */
       details.toggle-card {
         background: rgba(28, 28, 30, 0.38);
         margin-bottom: 0.95rem;
@@ -388,7 +385,6 @@ const jsonLd = {
         flex: 1;
       }
 
-      /* 右端のサークル付きシェブロンアイコン */
       .toggle-chevron {
         width: 26px; height: 26px;
         border-radius: 50%;
@@ -412,7 +408,6 @@ const jsonLd = {
       }
       .toggle-text:last-child { margin-bottom: 0; }
 
-      /* 2階層目トグル（開閉時の色変化なし） */
       details.nested-toggle {
         background: rgba(0, 0, 0, 0.18); 
         margin-bottom: 0.8rem; padding: 0.95rem 1.2rem; border-radius: 6px; 
@@ -432,7 +427,6 @@ const jsonLd = {
       details[open] > summary.nested-summary .nested-icon { transform: rotate(90deg); }
       .nested-content { margin-top: 0.85rem; padding-top: 0.85rem; border-top: 1px solid rgba(255, 255, 255, 0.06); }
 
-      /* 3階層目以降のトグル（【テキストデータ抽出】など） */
       details.deep-toggle {
         background: rgba(0, 0, 0, 0.22);
         margin: 0.7rem 0; padding: 0.8rem 1rem; border-radius: 6px;
@@ -443,7 +437,6 @@ const jsonLd = {
         margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid rgba(255, 255, 255, 0.05);
       }
 
-      /* 多階層箇条書きツリー（Shift+Enter改行時も「・」なしで頭が揃うよう white-space: pre-wrap を適用） */
       .list-item {
         position: relative;
         line-height: 1.75;
@@ -458,6 +451,11 @@ const jsonLd = {
         position: absolute;
         left: 0;
         top: 0;
+      }
+      .list-note {
+        display: block;
+        margin-left: -1.35rem;
+        margin-top: 0.25rem;
       }
       .list-level-0 {
         margin-top: 0.85rem;
@@ -537,7 +535,6 @@ const jsonLd = {
         margin: 1.2rem 0;
       }
 
-      /* ★ スマホ表示時の最適化：SNSボタンを「上段2×2（2/2）、下段3×2（3/3）」にピシッと整列させる */
       @media (max-width: 600px) {
         .top-spacer { height: 36px; }
         .container { padding: 0 16px 64px; }
@@ -635,7 +632,6 @@ const jsonLd = {
           const typeData = block[type];
           const text = getPlainText(block);
 
-          // 1階層目のトグルカード（左アクセントライン＋右端シェブロンアイコン）
           if (block.children && block.children.length > 0) {
             return (
               <details class="toggle-card">
